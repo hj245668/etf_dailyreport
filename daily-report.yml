@@ -1,0 +1,33 @@
+name: daily-etf-report
+
+on:
+  schedule:
+    # 평일 16:30 KST (= 07:30 UTC). GitHub 사정으로 수 분~수십 분 늦을 수 있음
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "휴장/데이터 미갱신이어도 전송"
+        type: boolean
+        default: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run report
+        run: python report.py ${{ inputs.force && '--force' || '' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          AVG_PRICE: ${{ secrets.AVG_PRICE }}
+          QUANTITY: ${{ secrets.QUANTITY }}
+          POSITION_LIMIT_KRW: ${{ secrets.POSITION_LIMIT_KRW }}
+          EXTRA_CASH_KRW: ${{ secrets.EXTRA_CASH_KRW }}
